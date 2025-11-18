@@ -1,0 +1,301 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "dca-auth-main",
+    "title": "DCA-Auth Main Dashboard",
+    "tags": ["dca-auth", "production"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "type": "stat",
+        "title": "System Status",
+        "targets": [
+          {
+            "expr": "up{job=~\"api|bot|dashboard\"}",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "value": 1, "text": "UP", "color": "green" },
+              { "type": "value", "value": 0, "text": "DOWN", "color": "red" }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+        "type": "stat",
+        "title": "Active Users (24h)",
+        "targets": [
+          {
+            "expr": "daily_active_users",
+            "legendFormat": "Active Users"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "yellow", "value": 10 },
+                { "color": "green", "value": 50 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+        "type": "stat",
+        "title": "Active Licenses",
+        "targets": [
+          {
+            "expr": "sum(license_status{status=\"ACTIVE\"})",
+            "legendFormat": "Active Licenses"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+        "type": "stat",
+        "title": "Discord Bot Guilds",
+        "targets": [
+          {
+            "expr": "discord_bot_guilds_total",
+            "legendFormat": "Guilds"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "yellow", "value": 0 },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+        "type": "graph",
+        "title": "Request Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (method)",
+            "legendFormat": "{{method}}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Requests/sec",
+            "format": "short",
+            "show": true
+          }
+        ],
+        "xaxis": {
+          "show": true,
+          "mode": "time"
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+        "type": "graph",
+        "title": "Response Time (95th percentile)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, path))",
+            "legendFormat": "{{path}}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Response Time (s)",
+            "format": "s",
+            "show": true
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "gridPos": { "x": 0, "y": 12, "w": 8, "h": 8 },
+        "type": "graph",
+        "title": "License Operations",
+        "targets": [
+          {
+            "expr": "sum(rate(license_activations_total[5m])) by (status)",
+            "legendFormat": "Activation {{status}}"
+          },
+          {
+            "expr": "sum(rate(license_verifications_total[5m])) by (result)",
+            "legendFormat": "Verification {{result}}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Operations/sec",
+            "format": "short",
+            "show": true
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "gridPos": { "x": 8, "y": 12, "w": 8, "h": 8 },
+        "type": "graph",
+        "title": "Database Query Performance",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le, operation))",
+            "legendFormat": "{{operation}}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Query Time (s)",
+            "format": "s",
+            "show": true
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "gridPos": { "x": 16, "y": 12, "w": 8, "h": 8 },
+        "type": "graph",
+        "title": "Cache Performance",
+        "targets": [
+          {
+            "expr": "sum(rate(cache_hits_total[5m]))",
+            "legendFormat": "Hits"
+          },
+          {
+            "expr": "sum(rate(cache_misses_total[5m]))",
+            "legendFormat": "Misses"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Operations/sec",
+            "format": "short",
+            "show": true
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+        "type": "graph",
+        "title": "System Resources",
+        "targets": [
+          {
+            "expr": "nodejs_memory_usage_bytes{type=\"heapUsed\"} / 1024 / 1024",
+            "legendFormat": "Heap Used (MB)"
+          },
+          {
+            "expr": "nodejs_cpu_usage_percentage * 100",
+            "legendFormat": "CPU %"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Usage",
+            "format": "short",
+            "show": true
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+        "type": "graph",
+        "title": "Error Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"4..\"}[5m]))",
+            "legendFormat": "4xx Errors"
+          },
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m]))",
+            "legendFormat": "5xx Errors"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Errors/sec",
+            "format": "short",
+            "show": true
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [0.1],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "5m",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High Error Rate",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      }
+    ]
+  }
+}
