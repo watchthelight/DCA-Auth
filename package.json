@@ -29,7 +29,8 @@
     "db:push": "npm run db:push -w @dca-auth/shared",
     "docker:up": "docker-compose -f docker-compose.dev.yml up -d",
     "docker:down": "docker-compose -f docker-compose.dev.yml down",
-    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f"
+    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "config:validate": "tsx scripts/config/validate.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

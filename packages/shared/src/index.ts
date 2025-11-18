@@ -49,7 +49,29 @@ export type { RedisHealthResult } from './cache/health.js';
 export { env } from './config/env.js';
 export type { Env } from './config/env.js';
 export { redisConfig } from './config/redis.js';
-export type { RedisConfig } from './config/redis.js';
+export {
+  config,
+  configManager,
+  appConfigSchema,
+  databaseConfigSchema,
+  redisConfigSchema as redisSchemaValidation,
+  discordConfigSchema,
+  authConfigSchema,
+  apiConfigSchema,
+  featuresConfigSchema,
+  envLoader,
+} from './config/index.js';
+export type {
+  Config,
+  AppConfig,
+  DatabaseConfig,
+  RedisConfig as RedisConfigType,
+  DiscordConfig,
+  AuthConfig,
+  ApiConfig,
+  FeaturesConfig,
+  Environment,
+} from './config/index.js';
 
 // Utils exports
 export { logger } from './utils/logger.js';
