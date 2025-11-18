@@ -1,19 +1,15 @@
 /**
- * DCA-Auth API Server Entry Point
+ * DCA-Auth API Server Exports
  *
- * This is the main entry point for the REST API server.
- * It will handle license validation, user management, and admin operations.
+ * Main export file for the API package
  */
 
-console.log('DCA-Auth API Server - Starting...');
+// Export app creation functions
+export { createApp, setupGracefulShutdown, setupErrorHandlers } from './app.js';
 
-/**
- * Placeholder function to demonstrate TypeScript strict mode compliance
- */
-function initialize(): void {
-  console.log('API Server initialized');
-}
-
-initialize();
-
-export {};
+// Export route handlers (useful for testing)
+export { default as authRoutes } from './routes/auth.routes.js';
+export { default as userRoutes } from './routes/user.routes.js';
+export { default as licenseRoutes } from './routes/license.routes.js';
+export { default as adminRoutes } from './routes/admin.routes.js';
+export { default as healthRoutes } from './routes/health.routes.js';
