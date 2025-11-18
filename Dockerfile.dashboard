@@ -1,0 +1,78 @@
+# Build stage
+FROM node:20-alpine AS builder
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/dashboard/package.json ./packages/dashboard/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY packages/shared ./packages/shared
+COPY packages/dashboard ./packages/dashboard
+
+# Set build-time environment variables
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_DISCORD_CLIENT_ID
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_DISCORD_CLIENT_ID=${NEXT_PUBLIC_DISCORD_CLIENT_ID}
+
+# Generate Prisma client
+WORKDIR /app/packages/shared
+RUN npx prisma generate
+
+# Build the application
+WORKDIR /app
+RUN pnpm --filter @dca-auth/shared build
+RUN pnpm --filter @dca-auth/dashboard build
+
+# Production stage
+FROM node:20-alpine AS runner
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Copy built application
+COPY --from=builder --chown=nodejs:nodejs /app/packages/dashboard/.next ./packages/dashboard/.next
+COPY --from=builder --chown=nodejs:nodejs /app/packages/dashboard/public ./packages/dashboard/public
+COPY --from=builder --chown=nodejs:nodejs /app/packages/dashboard/package.json ./packages/dashboard/
+COPY --from=builder --chown=nodejs:nodejs /app/packages/dashboard/next.config.js ./packages/dashboard/
+COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/package.json ./packages/shared/
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/packages/dashboard/node_modules ./packages/dashboard/node_modules
+
+# Set production environment
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+
+# Start the application with dumb-init
+WORKDIR /app/packages/dashboard
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["npm", "start"]

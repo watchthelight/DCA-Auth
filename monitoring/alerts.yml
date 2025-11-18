@@ -1,0 +1,174 @@
+groups:
+  - name: dca_auth_alerts
+    interval: 30s
+    rules:
+      # Service availability alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.service }} is down"
+          description: "{{ $labels.service }} has been down for more than 2 minutes."
+
+      # API response time alerts
+      - alert: HighAPIResponseTime
+        expr: histogram_quantile(0.95, http_request_duration_seconds_bucket{service="api"}) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API response time"
+          description: "95th percentile response time is above 1 second (current: {{ $value }}s)"
+
+      # Database connection alerts
+      - alert: DatabaseConnectionFailure
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection failure"
+          description: "Cannot connect to PostgreSQL database"
+
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connections are at {{ $value | humanizePercentage }} of maximum"
+
+      # Redis alerts
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache service is not responding"
+
+      - alert: HighRedisMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is at {{ $value | humanizePercentage }}"
+
+      # Discord bot alerts
+      - alert: DiscordBotOffline
+        expr: discord_bot_connected == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Discord bot is offline"
+          description: "Discord bot has been disconnected for more than 5 minutes"
+
+      - alert: HighDiscordAPILatency
+        expr: discord_api_latency_seconds > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Discord API latency"
+          description: "Discord API latency is {{ $value }}s"
+
+      # Resource usage alerts
+      - alert: HighCPUUsage
+        expr: (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 80% (current: {{ $value | humanizePercentage }})"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 90% (current: {{ $value | humanizePercentage }})"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Less than 10% disk space remaining ({{ $value | humanizePercentage }} free)"
+
+      # Application-specific alerts
+      - alert: HighLicenseActivationFailureRate
+        expr: rate(license_activation_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High license activation failure rate"
+          description: "License activation failure rate is {{ $value }} per second"
+
+      - alert: TooManyFailedLogins
+        expr: rate(auth_login_failures_total[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of failed login attempts"
+          description: "Failed login rate is {{ $value }} per second"
+
+      - alert: QueueBacklog
+        expr: job_queue_size > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Job queue backlog"
+          description: "Job queue has {{ $value }} pending jobs"
+
+      # Security alerts
+      - alert: PossibleBruteForceAttack
+        expr: rate(auth_login_failures_total{user!=""}[5m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Possible brute force attack"
+          description: "User {{ $labels.user }} has {{ $value }} failed login attempts per second"
+
+      - alert: UnauthorizedAPIAccess
+        expr: rate(http_requests_total{status=~"401|403"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of unauthorized API access"
+          description: "Unauthorized API access rate is {{ $value }} per second"
+
+      # Business metrics alerts
+      - alert: LowDailyActiveUsers
+        expr: daily_active_users < 10
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "Low daily active users"
+          description: "Only {{ $value }} active users today"
+
+      - alert: NoNewLicensesCreated
+        expr: increase(licenses_created_total[24h]) == 0
+        for: 24h
+        labels:
+          severity: info
+        annotations:
+          summary: "No new licenses created"
+          description: "No new licenses have been created in the last 24 hours"

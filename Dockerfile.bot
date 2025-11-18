@@ -1,0 +1,59 @@
+# Build stage
+FROM node:20-alpine AS builder
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/bot/package.json ./packages/bot/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY packages/shared ./packages/shared
+COPY packages/bot ./packages/bot
+
+# Generate Prisma client
+WORKDIR /app/packages/shared
+RUN npx prisma generate
+
+# Build the application
+WORKDIR /app
+RUN pnpm --filter @dca-auth/shared build
+RUN pnpm --filter @dca-auth/bot build
+
+# Production stage
+FROM node:20-alpine AS runner
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Copy built application
+COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/prisma ./packages/shared/prisma
+COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/package.json ./packages/shared/
+COPY --from=builder --chown=nodejs:nodejs /app/packages/bot/dist ./packages/bot/dist
+COPY --from=builder --chown=nodejs:nodejs /app/packages/bot/package.json ./packages/bot/
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/packages/bot/node_modules ./packages/bot/node_modules
+
+# Switch to non-root user
+USER nodejs
+
+# Start the application with dumb-init
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "packages/bot/dist/index.js"]
