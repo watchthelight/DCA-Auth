@@ -9,7 +9,7 @@ import crypto from 'crypto';
 
 import { sessionCache } from './cache.js';
 import { redisConfig } from '../config/redis.js';
-import { logger } from '../utils/logger.js';
+import { logger } from '../logging/logger.js';
 
 export interface SessionData {
   userId: string;

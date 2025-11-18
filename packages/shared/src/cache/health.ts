@@ -5,7 +5,7 @@
  */
 
 import { getRedisClient, isRedisConnected } from './client.js';
-import { logger } from '../utils/logger.js';
+import { logger } from '../logging/logger.js';
 
 export interface RedisHealthResult {
   status: 'healthy' | 'degraded' | 'unhealthy';

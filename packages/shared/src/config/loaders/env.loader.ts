@@ -9,7 +9,7 @@ import * as dotenv from 'dotenv';
 import * as dotenvExpand from 'dotenv-expand';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../logging/logger.js';
 
 export class EnvLoader {
   private environment: string;

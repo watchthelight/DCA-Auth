@@ -15,7 +15,7 @@ import { authConfigSchema } from './schemas/auth.schema.js';
 import { apiConfigSchema } from './schemas/api.schema.js';
 import { featuresConfigSchema } from './schemas/features.schema.js';
 import { envLoader } from './loaders/env.loader.js';
-import { logger } from '../utils/logger.js';
+import { logger } from '../logging/logger.js';
 
 // Combine all schemas into a single configuration schema
 const configSchema = z.object({

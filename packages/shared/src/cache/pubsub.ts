@@ -6,7 +6,7 @@
  */
 
 import { getPublisher, getSubscriber } from './client.js';
-import { logger } from '../utils/logger.js';
+import { logger } from '../logging/logger.js';
 
 export type MessageHandler<T = unknown> = (message: T, channel: string) => void | Promise<void>;
 
@@ -53,7 +53,7 @@ export class PubSub {
    */
   private handleMessage(channel: string, message: string, pattern?: string): void {
     if (this.options.logMessages) {
-      logger.debug(`Message received on ${channel}${pattern ? ` (pattern: ${pattern})` : ''}:`, message);
+      logger.debug(`Message received on ${channel}${pattern ? ` (pattern: ${pattern})` : ''}: ${message}`);
     }
 
     const handlers = this.handlers.get(channel) || new Set();
@@ -187,7 +187,7 @@ export class PubSub {
       const receivers = await this.publisher.publish(channel, serialized);
 
       if (this.options.logMessages) {
-        logger.debug(`Published to ${channel} (${receivers} receivers):`, serialized);
+        logger.debug(`Published to ${channel} (${receivers} receivers): ${serialized}`);
       }
 
       return receivers;

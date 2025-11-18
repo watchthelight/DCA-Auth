@@ -9,7 +9,7 @@ import { Redis } from 'ioredis';
 import type { Redis as RedisClient } from 'ioredis';
 
 import { redisConfig } from '../config/redis.js';
-import { logger } from '../utils/logger.js';
+import { logger } from '../logging/logger.js';
 
 let redisClient: RedisClient | null = null;
 let redisSubscriber: RedisClient | null = null;

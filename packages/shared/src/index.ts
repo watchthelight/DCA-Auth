@@ -73,8 +73,52 @@ export type {
   Environment,
 } from './config/index.js';
 
-// Utils exports
-export { logger } from './utils/logger.js';
+// Logging exports
+export {
+  logger,
+  error,
+  warn,
+  info,
+  http,
+  debug,
+  audit,
+  securityAudit,
+  performance,
+  AuditEventType,
+  correlationMiddleware,
+  getCorrelationId,
+  setCorrelationContext,
+  devRequestLogger,
+  prodRequestLogger,
+  errorLogger,
+} from './logging/index.js';
+export type { CorrelationContext, RequestLoggerOptions } from './logging/index.js';
+
+// Error exports
+export {
+  BaseError,
+  ValidationError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  RateLimitError,
+  InternalError,
+  ServiceUnavailableError,
+  BadGatewayError,
+  TimeoutError,
+  BusinessError,
+  IntegrationError,
+  DatabaseError,
+  ConfigurationError,
+  isOperationalError,
+  isTrustedError,
+  normalizeError,
+  errorHandler,
+  asyncHandler,
+  createHttpError,
+  setupGlobalErrorHandlers,
+} from './errors/index.js';
 
 // Placeholder types (will be expanded in later prompts)
 export type LicenseKey = {
