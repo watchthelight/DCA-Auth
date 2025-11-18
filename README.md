@@ -39,7 +39,7 @@ Native Discord integration provides automated license distribution based on serv
 ### High-Level Architecture
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph "Client Layer"
         DC[Discord Client]
         WB[Web Browser]
@@ -100,7 +100,7 @@ graph TB
 ### Service Interaction Model
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph "Discord Bot Service"
         BOT[Bot Core]
         CMD[Command Handler]
@@ -397,7 +397,7 @@ Supported webhook events:
 ### Optimization Strategy
 
 ```mermaid
-graph TD
+flowchart TD
     A[Request] --> B{Cache Hit?}
     B -->|Yes| C[Return Cached]
     B -->|No| D[Query Database]
@@ -448,7 +448,7 @@ The platform provides comprehensive health monitoring endpoints:
 ### Production Infrastructure
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph "Production Environment"
         CF[CloudFlare]
         CF --> LB[Load Balancer]
