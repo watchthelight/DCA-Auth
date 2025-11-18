@@ -1,0 +1,22 @@
+// DCA-Auth Database Schema
+// PostgreSQL database with Prisma ORM
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "postgresqlExtensions"]
+  binaryTargets   = ["native", "linux-musl", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// System Health Model - for database health checks
+model SystemHealth {
+  id        String   @id @default(uuid())
+  status    String
+  checkedAt DateTime @default(now())
+
+  @@map("system_health")
+}

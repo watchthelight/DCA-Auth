@@ -5,9 +5,20 @@
  * that are used across all DCA-Auth packages (API, Bot, Frontend).
  */
 
-/**
- * Placeholder type definition
- */
+// Database exports
+export { prisma } from './database/client.js';
+export {
+  checkDatabaseHealth,
+  isDatabaseConnected,
+  measureDatabaseLatency,
+} from './database/health.js';
+export type { HealthCheckResult } from './database/health.js';
+
+// Configuration exports
+export { env } from './config/env.js';
+export type { Env } from './config/env.js';
+
+// Placeholder types (will be expanded in later prompts)
 export type LicenseKey = {
   id: string;
   key: string;
@@ -16,11 +27,9 @@ export type LicenseKey = {
 };
 
 /**
- * Placeholder utility function
+ * Utility function for logging
  * @param message - Message to log
  */
 export function logInfo(message: string): void {
   console.log(`[INFO] ${message}`);
 }
-
-export {};

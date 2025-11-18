@@ -21,6 +21,15 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "typecheck": "tsc --noEmit",
+    "db:generate": "npm run db:generate -w @dca-auth/shared",
+    "db:migrate": "npm run db:migrate -w @dca-auth/shared",
+    "db:migrate:deploy": "npm run db:migrate:deploy -w @dca-auth/shared",
+    "db:seed": "npm run db:seed -w @dca-auth/shared",
+    "db:studio": "npm run db:studio -w @dca-auth/shared",
+    "db:push": "npm run db:push -w @dca-auth/shared",
+    "docker:up": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
     "prepare": "husky"
   },
   "devDependencies": {
