@@ -1,0 +1,17 @@
+{
+  "name": "@dca-auth/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Shared types and utilities for DCA-Auth",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}

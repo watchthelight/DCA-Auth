@@ -1,0 +1,13 @@
+node_modules
+dist
+build
+.next
+coverage
+*.lock
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.cache
+.vscode
+.claude
+prompts
