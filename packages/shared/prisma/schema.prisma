@@ -606,3 +606,53 @@ model KeyTransfer {
   @@index([transferredAt])
   @@map("key_transfers")
 }
+
+// ============================================
+// Discord Guild Configuration
+// ============================================
+
+model GuildConfig {
+  id              String           @id @default(uuid()) @db.Uuid
+  guildId         String           @unique @map("guild_id") @db.VarChar(30)
+
+  // Guild info
+  guildName       String           @map("guild_name") @db.VarChar(100)
+  ownerId         String           @map("owner_id") @db.VarChar(30)
+
+  // Configuration
+  enabled         Boolean          @default(true)
+  roleSync        Boolean          @default(false) @map("role_sync")
+  autoRegister    Boolean          @default(false) @map("auto_register")
+  requireEmail    Boolean          @default(false) @map("require_email")
+
+  // Command settings
+  commandPrefix   String           @default("/") @map("command_prefix") @db.VarChar(5)
+  adminRoleIds    String[]         @default([]) @map("admin_role_ids")
+  moderatorRoleIds String[]        @default([]) @map("moderator_role_ids")
+
+  // Channel settings
+  logChannelId    String?          @map("log_channel_id") @db.VarChar(30)
+  welcomeChannelId String?         @map("welcome_channel_id") @db.VarChar(30)
+
+  // License settings
+  defaultLicenseType LicenseKeyType? @map("default_license_type")
+  defaultMaxActivations Int        @default(1) @map("default_max_activations")
+  defaultExpirationDays Int?       @map("default_expiration_days")
+
+  // Role configurations (JSON array of role configs)
+  roleConfigs     Json?            @map("role_configs") @db.JsonB
+
+  // Features
+  features        Json?            @db.JsonB
+
+  // Metadata
+  metadata        Json?            @db.JsonB
+
+  // Timestamps
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([guildId])
+  @@index([enabled])
+  @@map("guild_configs")
+}
