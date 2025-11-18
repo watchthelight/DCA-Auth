@@ -159,7 +159,7 @@ export class ConfigValidator {
     }
 
     if (!this.hasErrors() && !this.hasWarnings()) {
-      lines.push(chalk.green('✓ Configuration is valid'));
+      lines.push(chalk.green('Configuration is valid'));
     }
 
     return lines.join('\n');

@@ -3,7 +3,7 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearch", "postgresqlExtensions"]
+  previewFeatures = ["views", "postgresqlExtensions", "fullTextSearch"]
   binaryTargets   = ["native", "linux-musl", "debian-openssl-3.0.x"]
 }
 
@@ -12,11 +12,384 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// System Health Model - for database health checks
-model SystemHealth {
-  id        String   @id @default(uuid())
-  status    String
-  checkedAt DateTime @default(now())
+// ==========================================
+// ENUMS
+// ==========================================
 
+enum UserRole {
+  USER
+  PREMIUM
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum AuditAction {
+  // Authentication
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  SESSION_CREATED
+  SESSION_REFRESHED
+  SESSION_REVOKED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_CHANGED
+  EMAIL_VERIFIED
+
+  // User Management
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_SUSPENDED
+  USER_REACTIVATED
+  USER_BANNED
+  PROFILE_UPDATED
+
+  // Role Management
+  ROLE_ASSIGNED
+  ROLE_REMOVED
+  PERMISSIONS_CHANGED
+
+  // License Keys (for future)
+  KEY_GENERATED
+  KEY_ACTIVATED
+  KEY_VALIDATED
+  KEY_REVOKED
+  KEY_EXPIRED
+  KEY_TRANSFERRED
+
+  // Admin Actions
+  ADMIN_ACCESS
+  SETTINGS_CHANGED
+  DATA_EXPORTED
+  DATA_IMPORTED
+  SYSTEM_CONFIG_CHANGED
+}
+
+enum SecurityEventType {
+  SUSPICIOUS_LOGIN
+  MULTIPLE_FAILED_ATTEMPTS
+  SESSION_HIJACK_ATTEMPT
+  RATE_LIMIT_EXCEEDED
+  INVALID_TOKEN
+  UNAUTHORIZED_ACCESS
+  BRUTE_FORCE_ATTEMPT
+  ACCOUNT_TAKEOVER_ATTEMPT
+}
+
+enum SecuritySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ==========================================
+// USER MODELS
+// ==========================================
+
+model User {
+  id              String      @id @default(uuid()) @db.Uuid
+  discordId       String      @unique @map("discord_id") @db.VarChar(32)
+  username        String      @unique @db.VarChar(100)
+  discriminator   String      @db.VarChar(4)
+  email           String?     @unique @db.VarChar(255)
+  avatarHash      String?     @map("avatar_hash") @db.VarChar(100)
+
+  // Status and roles
+  status          UserStatus  @default(ACTIVE)
+  roles           UserRole[]  @default([USER])
+  isEmailVerified Boolean     @default(false) @map("is_email_verified")
+  isBanned        Boolean     @default(false) @map("is_banned")
+  banReason       String?     @map("ban_reason") @db.Text
+
+  // Security
+  passwordHash    String?     @map("password_hash") @db.VarChar(255)
+  twoFactorSecret String?     @map("two_factor_secret") @db.VarChar(255)
+  twoFactorEnabled Boolean    @default(false) @map("two_factor_enabled")
+
+  // Timestamps
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?   @map("deleted_at") @db.Timestamptz(6)
+  lastLoginAt     DateTime?   @map("last_login_at") @db.Timestamptz(6)
+  emailVerifiedAt DateTime?   @map("email_verified_at") @db.Timestamptz(6)
+
+  // Metadata
+  metadata        Json?       @db.JsonB
+  preferences     Json?       @db.JsonB
+  version         Int         @default(1)
+
+  // Relations
+  profile         UserProfile?
+  sessions        Session[]
+  auditLogs       AuditLog[]
+  loginAttempts   LoginAttempt[]
+  securityEvents  SecurityEvent[]
+  // licenseKeys will be added in next prompt
+  // guildMembers will be added in next prompt
+
+  @@index([status, deletedAt])
+  @@index([createdAt])
+  @@index([email])
+  @@index([lastLoginAt])
+  @@index([discordId])
+  @@map("users")
+}
+
+// User profile for extended data
+model UserProfile {
+  id              String      @id @default(uuid()) @db.Uuid
+  userId          String      @unique @map("user_id") @db.Uuid
+
+  // Discord data
+  globalName      String?     @map("global_name") @db.VarChar(100)
+  accentColor     Int?        @map("accent_color")
+  banner          String?     @db.VarChar(100)
+  locale          String?     @db.VarChar(10)
+  premiumType     Int?        @map("premium_type") // Discord Nitro type
+
+  // Profile settings
+  bio             String?     @db.Text
+  timezone        String      @default("UTC") @db.VarChar(50)
+  dateFormat      String      @default("MM/DD/YYYY") @map("date_format") @db.VarChar(20)
+  language        String      @default("en") @db.VarChar(10)
+
+  // Notification preferences
+  emailNotifications      Boolean @default(true) @map("email_notifications")
+  discordNotifications    Boolean @default(true) @map("discord_notifications")
+  licenseExpireNotifications Boolean @default(true) @map("license_expire_notifications")
+
+  // Additional data
+  website         String?     @db.VarChar(255)
+  company         String?     @db.VarChar(255)
+  jobTitle        String?     @map("job_title") @db.VarChar(100)
+
+  // Timestamps
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// ==========================================
+// AUTHENTICATION MODELS
+// ==========================================
+
+model Session {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String          @map("user_id") @db.Uuid
+
+  // Token data
+  refreshToken    String          @unique @map("refresh_token") @db.Text
+  accessTokenHash String?         @map("access_token_hash") @db.VarChar(255)
+  tokenFamily     String?         @map("token_family") @db.Uuid // For refresh token rotation
+
+  // Session info
+  status          SessionStatus   @default(ACTIVE)
+  deviceName      String?         @map("device_name") @db.VarChar(100)
+  deviceType      String?         @map("device_type") @db.VarChar(50) // mobile, desktop, tablet
+  deviceInfo      Json?           @map("device_info") @db.JsonB
+  ipAddress       String          @map("ip_address") @db.Inet
+  userAgent       String?         @map("user_agent") @db.Text
+  location        String?         @db.VarChar(255) // Country, City
+
+  // Security
+  fingerprint     String?         @db.VarChar(255) // Device fingerprint
+  securityFlags   String[]        @default([]) @map("security_flags") // suspicious, verified, etc.
+
+  // Expiration
+  expiresAt       DateTime        @map("expires_at") @db.Timestamptz(6)
+  lastActivityAt  DateTime        @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  idleTimeoutAt   DateTime?       @map("idle_timeout_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt       DateTime?       @map("revoked_at") @db.Timestamptz(6)
+  revokedBy       String?         @map("revoked_by") @db.Uuid
+  revokedReason   String?         @map("revoked_reason") @db.Text
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@index([refreshToken])
+  @@index([tokenFamily])
+  @@index([lastActivityAt])
+  @@map("sessions")
+}
+
+// ==========================================
+// AUDIT & SECURITY MODELS
+// ==========================================
+
+model AuditLog {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String?         @map("user_id") @db.Uuid
+
+  // Event data
+  action          AuditAction
+  category        String?         @db.VarChar(50) // auth, user, license, admin
+  entityType      String?         @map("entity_type") @db.VarChar(50)
+  entityId        String?         @map("entity_id") @db.VarChar(255)
+
+  // Details
+  details         Json            @db.JsonB
+  oldValues       Json?           @map("old_values") @db.JsonB
+  newValues       Json?           @map("new_values") @db.JsonB
+  changes         Json?           @db.JsonB // Computed diff
+
+  // Context
+  ipAddress       String?         @map("ip_address") @db.Inet
+  userAgent       String?         @map("user_agent") @db.Text
+  sessionId       String?         @map("session_id") @db.Uuid
+  correlationId   String?         @map("correlation_id") @db.Uuid
+  requestId       String?         @map("request_id") @db.VarChar(255)
+
+  // Additional metadata
+  serviceName     String?         @map("service_name") @db.VarChar(50) // api, bot, admin
+  environment     String?         @db.VarChar(20) // production, staging, development
+  version         String?         @db.VarChar(20) // Application version
+
+  // Timestamp (immutable - no updates allowed)
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([category])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([correlationId])
+  @@index([sessionId])
+  @@map("audit_logs")
+}
+
+model LoginAttempt {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String?         @map("user_id") @db.Uuid
+
+  // Attempt data
+  identifier      String          @db.VarChar(255) // Email, username, or Discord ID attempted
+  identifierType  String          @map("identifier_type") @db.VarChar(20) // email, username, discord_id
+  success         Boolean
+  failureReason   String?         @map("failure_reason") @db.VarChar(255)
+  failureCode     String?         @map("failure_code") @db.VarChar(50)
+
+  // Authentication method
+  authMethod      String          @map("auth_method") @db.VarChar(50) // password, oauth, token
+  provider        String?         @db.VarChar(50) // discord, google, github
+
+  // Context
+  ipAddress       String          @map("ip_address") @db.Inet
+  userAgent       String?         @map("user_agent") @db.Text
+  deviceFingerprint String?       @map("device_fingerprint") @db.VarChar(255)
+
+  // Geolocation
+  country         String?         @db.VarChar(2)
+  countryName     String?         @map("country_name") @db.VarChar(100)
+  city            String?         @db.VarChar(100)
+  region          String?         @db.VarChar(100)
+  latitude        Float?
+  longitude       Float?
+
+  // Risk assessment
+  riskScore       Int?            @map("risk_score") // 0-100
+  riskFactors     String[]        @default([]) @map("risk_factors")
+
+  // Timestamp
+  attemptedAt     DateTime        @default(now()) @map("attempted_at") @db.Timestamptz(6)
+
+  // Relations
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([identifier])
+  @@index([ipAddress])
+  @@index([attemptedAt])
+  @@index([success])
+  @@map("login_attempts")
+}
+
+model SecurityEvent {
+  id              String              @id @default(uuid()) @db.Uuid
+
+  // Event data
+  type            SecurityEventType
+  severity        SecuritySeverity
+  title           String              @db.VarChar(255)
+  description     String              @db.Text
+
+  // Context
+  userId          String?             @map("user_id") @db.Uuid
+  ipAddress       String?             @map("ip_address") @db.Inet
+  userAgent       String?             @map("user_agent") @db.Text
+  sessionId       String?             @map("session_id") @db.Uuid
+
+  // Event details
+  details         Json                @db.JsonB
+  indicators      String[]            @default([]) // Specific indicators of compromise
+  affectedResources String[]          @default([]) @map("affected_resources")
+
+  // Response
+  actionTaken     String?             @map("action_taken") @db.Text
+  automated       Boolean             @default(false) // Was response automated
+
+  // Status
+  status          String              @default("open") @db.VarChar(20) // open, investigating, resolved, false_positive
+  resolved        Boolean             @default(false)
+  resolvedAt      DateTime?           @map("resolved_at") @db.Timestamptz(6)
+  resolvedBy      String?             @map("resolved_by") @db.Uuid
+  resolution      String?             @db.Text
+
+  // Timestamps
+  detectedAt      DateTime            @default(now()) @map("detected_at") @db.Timestamptz(6)
+  acknowledgedAt  DateTime?           @map("acknowledged_at") @db.Timestamptz(6)
+
+  // Relations
+  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, status])
+  @@index([severity])
+  @@index([userId])
+  @@index([detectedAt])
+  @@index([status])
+  @@map("security_events")
+}
+
+// ==========================================
+// SYSTEM MODELS
+// ==========================================
+
+model SystemHealth {
+  id              String   @id @default(uuid()) @db.Uuid
+  component       String   @db.VarChar(50) // database, redis, discord, api
+  status          String   @db.VarChar(20) // healthy, degraded, unhealthy
+  message         String?  @db.Text
+  details         Json?    @db.JsonB
+  responseTime    Int?     @map("response_time") // in milliseconds
+  checkedAt       DateTime @default(now()) @map("checked_at") @db.Timestamptz(6)
+
+  @@index([component])
+  @@index([checkedAt])
   @@map("system_health")
 }

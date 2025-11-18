@@ -18,12 +18,12 @@ const levelColors = {
 };
 
 const levelIcons = {
-  error: '✖',
-  warn: '⚠',
-  info: 'ℹ',
-  http: '⇄',
-  debug: '●',
-  silly: '○',
+  error: '[ERROR]',
+  warn: '[WARN]',
+  info: '[INFO]',
+  http: '[HTTP]',
+  debug: '[DEBUG]',
+  silly: '[TRACE]',
 };
 
 export function prettyFormatter(): winston.Logform.Format {
@@ -45,7 +45,7 @@ export function prettyFormatter(): winston.Logform.Format {
 
       // Get color function for level
       const colorFn = levelColors[level as keyof typeof levelColors] || chalk.white;
-      const icon = levelIcons[level as keyof typeof levelIcons] || '•';
+      const icon = levelIcons[level as keyof typeof levelIcons] || '[LOG]';
 
       // Format base message
       let output = `${chalk.gray(timestamp)} ${colorFn(icon)} ${colorFn(level.toUpperCase().padEnd(5))} ${message}`;
@@ -125,7 +125,7 @@ export function devFormatter(): winston.Logform.Format {
       const { timestamp, level, message, stack, ...metadata } = info;
 
       const colorFn = levelColors[level as keyof typeof levelColors] || chalk.white;
-      const icon = levelIcons[level as keyof typeof levelIcons] || '•';
+      const icon = levelIcons[level as keyof typeof levelIcons] || '[LOG]';
 
       // Build output with detailed formatting
       const parts = [
