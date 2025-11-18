@@ -139,8 +139,13 @@ model User {
   auditLogs       AuditLog[]
   loginAttempts   LoginAttempt[]
   securityEvents  SecurityEvent[]
-  // licenseKeys will be added in next prompt
-  // guildMembers will be added in next prompt
+  ownedLicenses   LicenseKey[]    @relation("OwnedLicenses")
+  createdLicenses LicenseKey[]    @relation("CreatedLicenses")
+  activations     Activation[]
+  transfersFrom   KeyTransfer[]   @relation("TransfersFrom")
+  transfersTo     KeyTransfer[]   @relation("TransfersTo")
+  transferredBy   KeyTransfer[]   @relation("TransferredBy")
+  approvedTransfers KeyTransfer[] @relation("ApprovedTransfers")
 
   @@index([status, deletedAt])
   @@index([createdAt])
@@ -392,4 +397,212 @@ model SystemHealth {
   @@index([component])
   @@index([checkedAt])
   @@map("system_health")
+}
+
+// ==========================================
+// LICENSE KEY MODELS
+// ==========================================
+
+enum LicenseKeyStatus {
+  INACTIVE       // Generated but not activated
+  ACTIVE         // Activated and valid
+  EXPIRED        // Past expiration date
+  REVOKED        // Manually revoked
+  SUSPENDED      // Temporarily suspended
+  EXHAUSTED      // All activations used
+}
+
+enum LicenseKeyType {
+  PERPETUAL      // Never expires
+  SUBSCRIPTION   // Time-based
+  TRIAL          // Limited trial
+  VOLUME         // Volume license
+  FLOATING       // Floating license
+}
+
+enum ActivationStatus {
+  ACTIVE
+  DEACTIVATED
+  BLOCKED
+  EXPIRED
+}
+
+model LicenseKey {
+  id              String           @id @default(uuid()) @db.Uuid
+  key             String           @unique @db.VarChar(255) // The actual license key
+  shortKey        String?          @unique @map("short_key") @db.VarChar(20) // Short identifier
+
+  // Key properties
+  type            LicenseKeyType   @default(SUBSCRIPTION)
+  status          LicenseKeyStatus @default(INACTIVE)
+  name            String?          @db.VarChar(255) // Friendly name
+  description     String?          @db.Text
+
+  // Ownership
+  ownerId         String?          @map("owner_id") @db.Uuid
+  createdById     String           @map("created_by_id") @db.Uuid
+
+  // Activation limits
+  maxActivations  Int              @default(1) @map("max_activations")
+  currentActivations Int           @default(0) @map("current_activations")
+  allowMultipleIps Boolean         @default(false) @map("allow_multiple_ips")
+
+  // Validity period
+  validFrom       DateTime?        @map("valid_from") @db.Timestamptz(6)
+  expiresAt       DateTime?        @map("expires_at") @db.Timestamptz(6)
+  trialDays       Int?             @map("trial_days") // For trial licenses
+  gracePeriodDays Int              @default(0) @map("grace_period_days")
+
+  // Features and metadata
+  features        Json?            @db.JsonB // Feature flags/limits
+  metadata        Json?            @db.JsonB // Additional data
+  tags            String[]         @default([])
+
+  // Billing
+  productId       String?          @map("product_id") @db.VarChar(100)
+  planId          String?          @map("plan_id") @db.VarChar(100)
+  customerId      String?          @map("customer_id") @db.VarChar(255)
+
+  // Security
+  ipWhitelist     String[]         @default([]) @map("ip_whitelist") @db.Inet[]
+  domainWhitelist String[]         @default([]) @map("domain_whitelist")
+  requiresHardwareId Boolean       @default(false) @map("requires_hardware_id")
+
+  // Timestamps
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  firstActivatedAt DateTime?       @map("first_activated_at") @db.Timestamptz(6)
+  lastValidatedAt DateTime?        @map("last_validated_at") @db.Timestamptz(6)
+  revokedAt       DateTime?        @map("revoked_at") @db.Timestamptz(6)
+  revokedReason   String?          @map("revoked_reason") @db.Text
+
+  // Relations
+  owner           User?            @relation("OwnedLicenses", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy       User             @relation("CreatedLicenses", fields: [createdById], references: [id])
+  activations     Activation[]
+  validations     KeyValidation[]
+  transfers       KeyTransfer[]
+
+  @@index([key])
+  @@index([shortKey])
+  @@index([status])
+  @@index([ownerId])
+  @@index([createdById])
+  @@index([expiresAt])
+  @@index([type, status])
+  @@index([productId])
+  @@index([customerId])
+  @@map("license_keys")
+}
+
+model Activation {
+  id              String           @id @default(uuid()) @db.Uuid
+  licenseKeyId    String           @map("license_key_id") @db.Uuid
+  userId          String?          @map("user_id") @db.Uuid
+
+  // Activation details
+  status          ActivationStatus @default(ACTIVE)
+  activationCode  String?          @map("activation_code") @db.VarChar(100)
+
+  // Hardware binding
+  hardwareId      String?          @map("hardware_id") @db.VarChar(255)
+  machineId       String?          @map("machine_id") @db.VarChar(255)
+  hostname        String?          @db.VarChar(255)
+  platform        String?          @db.VarChar(50) // windows, mac, linux
+
+  // Environment
+  ipAddress       String           @map("ip_address") @db.Inet
+  location        String?          @db.VarChar(255)
+  userAgent       String?          @map("user_agent") @db.Text
+  appVersion      String?          @map("app_version") @db.VarChar(50)
+
+  // Metadata
+  deviceInfo      Json?            @map("device_info") @db.JsonB
+  metadata        Json?            @db.JsonB
+
+  // Timestamps
+  activatedAt     DateTime         @default(now()) @map("activated_at") @db.Timestamptz(6)
+  lastSeenAt      DateTime         @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  deactivatedAt   DateTime?        @map("deactivated_at") @db.Timestamptz(6)
+  expiresAt       DateTime?        @map("expires_at") @db.Timestamptz(6)
+
+  // Relations
+  licenseKey      LicenseKey       @relation(fields: [licenseKeyId], references: [id], onDelete: Cascade)
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([licenseKeyId, hardwareId])
+  @@index([licenseKeyId, status])
+  @@index([userId])
+  @@index([hardwareId])
+  @@index([status])
+  @@index([lastSeenAt])
+  @@map("activations")
+}
+
+model KeyValidation {
+  id              String           @id @default(uuid()) @db.Uuid
+  licenseKeyId    String           @map("license_key_id") @db.Uuid
+  activationId    String?          @map("activation_id") @db.Uuid
+
+  // Validation result
+  isValid         Boolean          @map("is_valid")
+  reason          String?          @db.VarChar(255) // Why validation failed
+  validationType  String           @map("validation_type") @db.VarChar(50) // online, offline, heartbeat
+
+  // Context
+  hardwareId      String?          @map("hardware_id") @db.VarChar(255)
+  ipAddress       String           @map("ip_address") @db.Inet
+  userAgent       String?          @map("user_agent") @db.Text
+  appVersion      String?          @map("app_version") @db.VarChar(50)
+
+  // Response
+  responseData    Json?            @map("response_data") @db.JsonB // Data sent back to client
+
+  // Timestamp
+  validatedAt     DateTime         @default(now()) @map("validated_at") @db.Timestamptz(6)
+
+  // Relations
+  licenseKey      LicenseKey       @relation(fields: [licenseKeyId], references: [id], onDelete: Cascade)
+
+  @@index([licenseKeyId])
+  @@index([activationId])
+  @@index([validatedAt])
+  @@index([isValid])
+  @@map("key_validations")
+}
+
+model KeyTransfer {
+  id              String           @id @default(uuid()) @db.Uuid
+  licenseKeyId    String           @map("license_key_id") @db.Uuid
+
+  // Transfer details
+  fromUserId      String           @map("from_user_id") @db.Uuid
+  toUserId        String           @map("to_user_id") @db.Uuid
+  transferredById String           @map("transferred_by_id") @db.Uuid
+
+  // Transfer metadata
+  reason          String?          @db.Text
+  notes           String?          @db.Text
+  metadata        Json?            @db.JsonB
+
+  // Security
+  ipAddress       String           @map("ip_address") @db.Inet
+  approved        Boolean          @default(true)
+  approvedById    String?          @map("approved_by_id") @db.Uuid
+
+  // Timestamps
+  transferredAt   DateTime         @default(now()) @map("transferred_at") @db.Timestamptz(6)
+
+  // Relations
+  licenseKey      LicenseKey       @relation(fields: [licenseKeyId], references: [id], onDelete: Cascade)
+  fromUser        User             @relation("TransfersFrom", fields: [fromUserId], references: [id])
+  toUser          User             @relation("TransfersTo", fields: [toUserId], references: [id])
+  transferredBy   User             @relation("TransferredBy", fields: [transferredById], references: [id])
+  approvedBy      User?            @relation("ApprovedTransfers", fields: [approvedById], references: [id])
+
+  @@index([licenseKeyId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([transferredAt])
+  @@map("key_transfers")
 }
