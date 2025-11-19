@@ -1,0 +1,394 @@
+scalar DateTime
+scalar JSON
+scalar EmailAddress
+scalar URL
+scalar UUID
+scalar BigInt
+
+# Enums
+enum LicenseType {
+  TRIAL
+  STANDARD
+  PREMIUM
+  ENTERPRISE
+}
+
+enum LicenseStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  SUSPENDED
+  REVOKED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+  DEVELOPER
+}
+
+enum SortOrder {
+  ASC
+  DESC
+}
+
+# Input Types
+input CreateLicenseInput {
+  type: LicenseType!
+  userId: ID!
+  productId: ID!
+  maxActivations: Int = 1
+  expiresInDays: Int
+  metadata: JSON
+}
+
+input ActivateLicenseInput {
+  key: String!
+  hardwareId: String!
+  deviceName: String
+  ipAddress: String
+  metadata: JSON
+}
+
+input VerifyLicenseInput {
+  key: String!
+  hardwareId: String!
+}
+
+input PaginationInput {
+  page: Int = 1
+  limit: Int = 10
+  sortBy: String
+  sortOrder: SortOrder = DESC
+}
+
+input LicenseFilterInput {
+  type: LicenseType
+  status: LicenseStatus
+  userId: ID
+  productId: ID
+  search: String
+}
+
+input RegisterInput {
+  email: EmailAddress!
+  password: String!
+  username: String!
+}
+
+input LoginInput {
+  email: EmailAddress!
+  password: String!
+  twoFactorCode: String
+}
+
+# Object Types
+type User {
+  id: ID!
+  email: EmailAddress!
+  username: String!
+  discordId: String
+  emailVerified: Boolean!
+  twoFactorEnabled: Boolean!
+  roles: [UserRole!]!
+  licenses: [License!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  metadata: JSON
+  stats: UserStats
+}
+
+type UserStats {
+  totalLicenses: Int!
+  activeLicenses: Int!
+  totalActivations: Int!
+  lastActivity: DateTime
+}
+
+type Product {
+  id: ID!
+  name: String!
+  description: String
+  price: Float!
+  features: [String!]!
+  licenses: [License!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  metadata: JSON
+}
+
+type License {
+  id: ID!
+  key: String!
+  type: LicenseType!
+  status: LicenseStatus!
+  user: User!
+  product: Product!
+  maxActivations: Int!
+  currentActivations: Int!
+  remainingActivations: Int!
+  activations: [Activation!]!
+  expiresAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  metadata: JSON
+  analytics: LicenseAnalytics
+  blockchainRecord: BlockchainRecord
+}
+
+type Activation {
+  id: ID!
+  license: License!
+  hardwareId: String!
+  deviceName: String
+  ipAddress: String
+  activatedAt: DateTime!
+  lastSeenAt: DateTime!
+  metadata: JSON
+}
+
+type LicenseAnalytics {
+  totalVerifications: Int!
+  averageVerificationsPerDay: Float!
+  fraudScore: Float
+  riskLevel: String
+}
+
+type BlockchainRecord {
+  transactionHash: String!
+  blockNumber: BigInt!
+  contractAddress: String!
+  tokenId: BigInt
+  verified: Boolean!
+}
+
+type AuthPayload {
+  user: User!
+  accessToken: String!
+  refreshToken: String!
+}
+
+type VerificationResult {
+  valid: Boolean!
+  license: License
+  activation: Activation
+  error: String
+  fraudDetection: FraudDetectionResult
+}
+
+type FraudDetectionResult {
+  score: Float!
+  riskLevel: String!
+  factors: [FraudFactor!]!
+  recommendations: [String!]!
+  requiresManualReview: Boolean!
+}
+
+type FraudFactor {
+  name: String!
+  weight: Float!
+  value: JSON!
+  contribution: Float!
+}
+
+type PaginatedLicenses {
+  data: [License!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+  hasNext: Boolean!
+  hasPrevious: Boolean!
+}
+
+type Analytics {
+  licenses: LicenseMetrics!
+  users: UserMetrics!
+  revenue: RevenueMetrics!
+  performance: PerformanceMetrics!
+}
+
+type LicenseMetrics {
+  total: Int!
+  active: Int!
+  expired: Int!
+  revoked: Int!
+  byType: JSON!
+  byProduct: JSON!
+}
+
+type UserMetrics {
+  total: Int!
+  active: Int!
+  new: Int!
+  retention: Float!
+  churn: Float!
+}
+
+type RevenueMetrics {
+  total: Float!
+  monthly: Float!
+  quarterly: Float!
+  yearly: Float!
+  byProduct: JSON!
+  growth: Float!
+}
+
+type PerformanceMetrics {
+  apiLatency: Float!
+  databaseLatency: Float!
+  cacheHitRate: Float!
+  errorRate: Float!
+}
+
+type Webhook {
+  id: ID!
+  url: URL!
+  events: [String!]!
+  active: Boolean!
+  secret: String
+  headers: JSON
+  deliveries: [WebhookDelivery!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type WebhookDelivery {
+  id: ID!
+  webhook: Webhook!
+  event: String!
+  payload: JSON!
+  statusCode: Int!
+  success: Boolean!
+  error: String
+  attempt: Int!
+  deliveredAt: DateTime!
+}
+
+type Subscription {
+  # Real-time license updates
+  licenseUpdated(userId: ID): License!
+  licenseActivated(licenseId: ID!): Activation!
+  licenseDeactivated(licenseId: ID!): Activation!
+
+  # Real-time fraud alerts
+  fraudDetected(userId: ID): FraudDetectionResult!
+
+  # Real-time analytics
+  analyticsUpdate(metric: String!): JSON!
+
+  # System notifications
+  notification(userId: ID!): Notification!
+}
+
+type Notification {
+  id: ID!
+  type: String!
+  title: String!
+  message: String!
+  data: JSON
+  timestamp: DateTime!
+}
+
+type Query {
+  # User queries
+  me: User!
+  user(id: ID!): User
+  users(filter: JSON, pagination: PaginationInput): [User!]!
+
+  # License queries
+  license(id: ID!): License
+  licenseByKey(key: String!): License
+  licenses(filter: LicenseFilterInput, pagination: PaginationInput): PaginatedLicenses!
+  userLicenses(userId: ID!, pagination: PaginationInput): PaginatedLicenses!
+
+  # Product queries
+  product(id: ID!): Product
+  products(pagination: PaginationInput): [Product!]!
+
+  # Verification
+  verifyLicense(input: VerifyLicenseInput!): VerificationResult!
+
+  # Analytics
+  analytics(timeframe: String): Analytics!
+  licenseAnalytics(licenseId: ID!): LicenseAnalytics!
+  userAnalytics(userId: ID!): UserStats!
+
+  # Webhooks
+  webhook(id: ID!): Webhook
+  webhooks: [Webhook!]!
+
+  # Fraud detection
+  fraudScore(userId: ID!): Float!
+  suspiciousActivities(limit: Int): [FraudDetectionResult!]!
+
+  # Blockchain
+  blockchainRecord(licenseId: ID!): BlockchainRecord
+}
+
+type Mutation {
+  # Authentication
+  register(input: RegisterInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  logout: Boolean!
+  refreshToken(token: String!): AuthPayload!
+
+  # User management
+  updateProfile(input: JSON!): User!
+  changePassword(currentPassword: String!, newPassword: String!): Boolean!
+  enable2FA: TwoFactorSetup!
+  disable2FA(code: String!): Boolean!
+
+  # License management
+  createLicense(input: CreateLicenseInput!): License!
+  activateLicense(input: ActivateLicenseInput!): ActivationResult!
+  deactivateLicense(licenseId: ID!, hardwareId: String!): Boolean!
+  revokeLicense(licenseId: ID!, reason: String!): License!
+  suspendLicense(licenseId: ID!, reason: String!): License!
+  unsuspendLicense(licenseId: ID!): License!
+  transferLicense(licenseId: ID!, newUserId: ID!): License!
+  extendLicense(licenseId: ID!, days: Int!): License!
+
+  # Webhook management
+  createWebhook(url: URL!, events: [String!]!): Webhook!
+  updateWebhook(id: ID!, url: URL, events: [String!], active: Boolean): Webhook!
+  deleteWebhook(id: ID!): Boolean!
+  testWebhook(id: ID!): WebhookDelivery!
+
+  # Blockchain operations
+  recordOnBlockchain(licenseId: ID!): BlockchainRecord!
+  verifyBlockchainRecord(licenseId: ID!): Boolean!
+
+  # Admin operations
+  banUser(userId: ID!, reason: String!): User!
+  unbanUser(userId: ID!): User!
+  bulkCreateLicenses(count: Int!, template: CreateLicenseInput!): [License!]!
+  importLicenses(file: String!): ImportResult!
+  exportLicenses(format: String!): String!
+}
+
+type TwoFactorSetup {
+  secret: String!
+  qrCode: String!
+  backupCodes: [String!]!
+}
+
+type ActivationResult {
+  success: Boolean!
+  activation: Activation
+  license: License
+  error: String
+}
+
+type ImportResult {
+  imported: Int!
+  failed: Int!
+  errors: [String!]!
+}
+
+# Directives
+directive @auth(requires: UserRole = USER) on FIELD_DEFINITION
+directive @rateLimit(max: Int!, window: String!) on FIELD_DEFINITION
+directive @cache(ttl: Int!) on FIELD_DEFINITION
+directive @deprecated(reason: String) on FIELD_DEFINITION | ENUM_VALUE
