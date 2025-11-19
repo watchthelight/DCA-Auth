@@ -1,0 +1,32 @@
+{
+  "name": "@dca-auth/ai-ml",
+  "version": "1.0.0",
+  "description": "AI/ML services for DCA-Auth system",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "train": "tsx src/training/train.ts",
+    "test": "jest",
+    "analyze": "tsx src/analysis/analyze.ts"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^4.15.0",
+    "brain.js": "^2.0.0-beta.23",
+    "natural": "^6.7.2",
+    "compromise": "^14.10.0",
+    "ml-regression": "^5.0.0",
+    "ml-kmeans": "^6.0.0",
+    "anomaly-detector": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "redis": "^4.6.12",
+    "bull": "^4.12.0",
+    "@prisma/client": "^5.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3",
+    "tsx": "^4.6.2",
+    "jest": "^29.7.0"
+  }
+}
