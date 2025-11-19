@@ -1,0 +1,8 @@
+is_global = true
+build_property.RootNamespace = DCAAuth.SDK
+build_property.ProjectDir = D:\DCA-Auth\packages\sdk-dotnet\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.CsWinRTUseWindowsUIXamlProjections = false
+build_property.EffectiveAnalysisLevelStyle = 
+build_property.EnableCodeStyleSeverity = 

@@ -1,0 +1,37 @@
+{
+  "name": "@dca-auth/billing",
+  "version": "1.0.0",
+  "description": "Payment processing and billing system for DCA-Auth",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "test": "jest",
+    "reconcile": "tsx src/scripts/reconcile.ts"
+  },
+  "dependencies": {
+    "stripe": "^14.10.0",
+    "@paypal/checkout-server-sdk": "^1.0.3",
+    "square": "^33.1.0",
+    "braintree": "^3.20.0",
+    "coinbase-commerce-node": "^1.0.4",
+    "@paddle/paddle-node-sdk": "^1.2.2",
+    "razorpay": "^2.9.2",
+    "decimal.js": "^10.4.3",
+    "currencies": "^2.0.0",
+    "country-currency": "^0.1.0",
+    "tax-calculator": "^1.0.0",
+    "pdfmake": "^0.2.9",
+    "@prisma/client": "^5.7.0",
+    "ioredis": "^5.3.2",
+    "bull": "^4.12.0",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/braintree": "^3.3.11",
+    "typescript": "^5.3.3",
+    "tsx": "^4.6.2",
+    "jest": "^29.7.0"
+  }
+}

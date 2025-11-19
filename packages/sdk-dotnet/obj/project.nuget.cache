@@ -1,0 +1,108 @@
+{
+  "version": 2,
+  "dgSpecHash": "oL6uLU8d01c=",
+  "success": false,
+  "projectFilePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1102",
+      "level": "Error",
+      "message": "Unable to find package NETStandard.Library with version (>= 2.0.3)\r\n  - Found 1 version(s) in Microsoft Visual Studio Offline Packages [ Nearest version: 1.6.0 ]\r\n  - Found 0 version(s) in C:\\Program Files\\dotnet\\library-packs",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "NETStandard.Library",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package Microsoft.Extensions.Http. No packages exist with this id in source(s): C:\\Program Files\\dotnet\\library-packs, Microsoft Visual Studio Offline Packages",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "Microsoft.Extensions.Http",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package Microsoft.Extensions.Logging.Abstractions. No packages exist with this id in source(s): C:\\Program Files\\dotnet\\library-packs, Microsoft Visual Studio Offline Packages",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "Microsoft.Extensions.Logging.Abstractions",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1102",
+      "level": "Error",
+      "message": "Unable to find package Newtonsoft.Json with version (>= 13.0.3)\r\n  - Found 1 version(s) in Microsoft Visual Studio Offline Packages [ Nearest version: 13.0.1 ]\r\n  - Found 0 version(s) in C:\\Program Files\\dotnet\\library-packs",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "Newtonsoft.Json",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package Polly. No packages exist with this id in source(s): C:\\Program Files\\dotnet\\library-packs, Microsoft Visual Studio Offline Packages",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "Polly",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1102",
+      "level": "Error",
+      "message": "Unable to find package System.ComponentModel.Annotations with version (>= 5.0.0)\r\n  - Found 2 version(s) in Microsoft Visual Studio Offline Packages [ Nearest version: 4.1.0 ]\r\n  - Found 0 version(s) in C:\\Program Files\\dotnet\\library-packs",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "System.ComponentModel.Annotations",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package System.IdentityModel.Tokens.Jwt. No packages exist with this id in source(s): C:\\Program Files\\dotnet\\library-packs, Microsoft Visual Studio Offline Packages",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "System.IdentityModel.Tokens.Jwt",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1102",
+      "level": "Error",
+      "message": "Unable to find package Microsoft.CSharp with version (>= 4.7.0)\r\n  - Found 2 version(s) in Microsoft Visual Studio Offline Packages [ Nearest version: 4.0.1 ]\r\n  - Found 0 version(s) in C:\\Program Files\\dotnet\\library-packs",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "Microsoft.CSharp",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1102",
+      "level": "Error",
+      "message": "Unable to find package System.Net.Http with version (>= 4.3.4)\r\n  - Found 2 version(s) in Microsoft Visual Studio Offline Packages [ Nearest version: 4.1.0 ]\r\n  - Found 0 version(s) in C:\\Program Files\\dotnet\\library-packs",
+      "projectPath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "filePath": "D:\\DCA-Auth\\packages\\sdk-dotnet\\DCAAuth.SDK.csproj",
+      "libraryId": "System.Net.Http",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    }
+  ]
+}
